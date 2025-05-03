@@ -15,14 +15,21 @@ class Game {
         // Player
         this.player = {
             x: 100,
-            y: this.canvas.height - 60,
-            width: 40,
-            height: 40,
+            y: this.canvas.height - 20 - 116, // ground height (20) + player height (216)
+            width: 50,
+            height: 116,
             velocityY: 0,
-            jumping: false
+            jumping: false,
+            frameIndex: 0,
+            frameCount: 10,
+            frameWidth: 100,
+            frameHeight: 200,
+            frameTimer: 0,
+            frameInterval: 1000 / 12, // 12 FPS
+            bobOffset: 0
         };
         this.playerImg = new Image();
-        this.playerImg.src = 'assets/chacter.gif';
+        this.playerImg.src = 'assets/character-sprite.png'; // update to sprite sheet filename
         
         // Game objects
         this.coins = [];
@@ -139,6 +146,17 @@ class Game {
                 this.endGame();
             }
         });
+        
+        // Animate player sprite
+        if (!this.player.jumping) {
+            this.player.frameTimer += this.speed * 2; // speed up animation with speed
+            if (this.player.frameTimer > this.player.frameInterval) {
+                this.player.frameIndex = (this.player.frameIndex + 1) % this.player.frameCount;
+                this.player.frameTimer = 0;
+            }
+        } else {
+            this.player.frameIndex = 0; // show first frame when jumping
+        }
     }
     
     checkCollision(rect1, rect2) {
@@ -156,8 +174,14 @@ class Game {
         this.ctx.fillStyle = '#a259e6';
         this.ctx.fillRect(0, this.ground, this.canvas.width, 20);
         
-        // Draw player
-        this.ctx.drawImage(this.playerImg, this.player.x, this.player.y, this.player.width, this.player.height);
+        // Draw player with sprite sheet animation and bobbing effect
+        this.ctx.drawImage(
+            this.playerImg,
+            this.player.frameIndex * this.player.frameWidth, 0, // source x, y
+            this.player.frameWidth, this.player.frameHeight,    // source w, h
+            this.player.x, this.player.y + (this.player.bobOffset || 0), // dest x, y
+            this.player.width, this.player.height               // dest w, h
+        );
         
         // Draw coins as circles with image clipped inside
         this.coins.forEach(coin => {
